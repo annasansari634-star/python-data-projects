@@ -1,38 +1,43 @@
 import pandas as pd
+df = pd.read_csv('expenses.csv')
+df['date'] = pd.to_datetime(df['date'])
+
+category_wise = df.groupby('category')['amount'].sum().sort_values(ascending=False)
+print("--- Category-wise Total Expense ---")
+print(category_wise)
+
+df['month'] = df['date'].dt.to_period('M')
+monthly_wise = df.groupby('month')['amount'].sum()
+print("\n--- Monthly Total Expense ---")
+print(monthly_wise)
+
 import matplotlib.pyplot as plt
 
-# 1. Load the dataset
-df = pd.read_csv('Mumbai_weather.csv')
+# 1. grouping data for the charts
+# category totals for pie chart
+category_totals = df.groupby('category')['amount'].sum()
 
-print("--- Data Loaded Successfully ---")
-print(df.head())
+# monthly totals for line trend
+df['month_str'] = df['date'].dt.strftime('%Y-%m') # simple month format like 2026-01
+monthly_totals = df.groupby('month_str')['amount'].sum()
 
-# 2. Data Cleaning & Preprocessing
-# Convert DATE column to datetime format (format is DD-MM-YYYY based on preview)
-df['DATE'] = pd.to_datetime(df['DATE'], format='%d-%m-%Y')
-
-# Sort by date and set as index
-df = df.sort_values('DATE')
-df.set_index('DATE', inplace=True)
-
-# Handle missing values if any
-df['T2M'] = df['T2M'].ffill()
-
-# 3. Calculate Rolling Average (30-day smoothing for clear temperature trends)
-df['Temp_Rolling_30d'] = df['T2M'].rolling(window=30).mean()
-
-# 4. Visualizations (Multi-line trend dashboard)
+# 2. setting up the figure size
 plt.figure(figsize=(14, 6))
 
-# Plot daily temperature vs 30-day rolling average
-plt.plot(df.index, df['T2M'], label='Daily Temperature (T2M)', color='#a6c8e0', alpha=0.5)
-plt.plot(df.index, df['Temp_Rolling_30d'], label='30-Day Rolling Average', color='#d9534f', linewidth=2)
+# --- Plot 1: Pie chart for category breakdown ---
+plt.subplot(1, 2, 1) # 1 row, 2 columns, first plot
+plt.pie(category_totals, labels=category_totals.index, autopct='%1.1f%%', startangle=90, colors=['#ff9999','#66b3ff','#99ff99','#ffcc99','#c2c2f0'])
+plt.title('Where does the money go?')
 
-plt.title('Mumbai Weather Trend Dashboard (Temperature Analysis)')
-plt.xlabel('Year')
-plt.ylabel('Temperature (°C)')
-plt.legend()
+# --- Plot 2: Line chart for monthly trend ---
+plt.subplot(1, 2, 2) # 1 row, 2 columns, second plot
+plt.plot(monthly_totals.index, monthly_totals.values, marker='o', color='purple', linewidth=2)
+plt.title('Monthly Expense Trend')
+plt.xlabel('Month')
+plt.ylabel('Total Amount')
+plt.xticks(rotation=45)
 plt.grid(True, linestyle='--', alpha=0.6)
 
+# show both plots together
 plt.tight_layout()
 plt.show()
