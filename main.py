@@ -1,38 +1,54 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# 1. Load the dataset
-df = pd.read_csv('Mumbai_weather.csv')
+# Load your actual matches.csv file
+df = pd.read_csv('matches.csv')
 
-print("--- Data Loaded Successfully ---")
+# Check first few rows and column names
+print("--- Data Preview ---")
 print(df.head())
 
-# 2. Data Cleaning & Preprocessing
-# Convert DATE column to datetime format (format is DD-MM-YYYY based on preview)
-df['DATE'] = pd.to_datetime(df['DATE'], format='%d-%m-%Y')
+print("\n--- Columns in your dataset ---")
+print(df.columns)
 
-# Sort by date and set as index
-df = df.sort_values('DATE')
-df.set_index('DATE', inplace=True)
+# Check column names
+print(df.columns.tolist())
+# 1. Load the matches dataset from the local folder
+df = pd.read_csv('matches.csv')
 
-# Handle missing values if any
-df['T2M'] = df['T2M'].ffill()
+print("--- Data Preview ---")
+print(df.head())
 
-# 3. Calculate Rolling Average (30-day smoothing for clear temperature trends)
-df['Temp_Rolling_30d'] = df['T2M'].rolling(window=30).mean()
+# 2. Toss winner vs Match winner analysis
+df['toss_winner_match_winner'] = df['toss_winner'] == df['winner']
+toss_analysis = df['toss_winner_match_winner'].value_counts()
+print("\n--- Toss Winner vs Match Winner ---")
+print(toss_analysis)
 
-# 4. Visualizations (Multi-line trend dashboard)
-plt.figure(figsize=(14, 6))
+# 3. Top teams by total wins
+team_wins = df['winner'].value_counts().head(10)
+print("\n--- Top Teams by Wins ---")
+print(team_wins)
 
-# Plot daily temperature vs 30-day rolling average
-plt.plot(df.index, df['T2M'], label='Daily Temperature (T2M)', color='#a6c8e0', alpha=0.5)
-plt.plot(df.index, df['Temp_Rolling_30d'], label='30-Day Rolling Average', color='#d9534f', linewidth=2)
+# 4. Visualizations using Matplotlib
+fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
-plt.title('Mumbai Weather Trend Dashboard (Temperature Analysis)')
-plt.xlabel('Year')
-plt.ylabel('Temperature (°C)')
-plt.legend()
-plt.grid(True, linestyle='--', alpha=0.6)
+# Plot 1: Bar chart for team wins
+axes[0].bar(team_wins.index, team_wins.values, color='#ff6f61')
+axes[0].set_title('Top Teams by Matches Won')
+axes[0].set_xlabel('Team')
+axes[0].set_ylabel('Wins')
+axes[0].tick_params(axis='x', rotation=45)
+
+# Plot 2: Season-wise match trend (if 'season' column exists)
+if 'season' in df.columns:
+    season_trends = df['season'].value_counts().sort_index()
+    axes[1].plot(season_trends.index.astype(str), season_trends.values, marker='o', color='b', linewidth=2)
+    axes[1].set_title('Matches per Season')
+    axes[1].set_xlabel('Season')
+    axes[1].set_ylabel('Number of Matches')
+    axes[1].tick_params(axis='x', rotation=45)
+    axes[1].grid(True)
 
 plt.tight_layout()
 plt.show()
